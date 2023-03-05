@@ -24,9 +24,9 @@ jobs:
 
     - name: Install packages
       uses: r-lib/actions/setup-r-dependencies@v2
-        with:
-          packages: |
-            any::rvest
+      with:
+        packages: |
+          any::rvest
         
     - name: Scrape with R script
       run: Rscript "scrape_15m_weather.R""
