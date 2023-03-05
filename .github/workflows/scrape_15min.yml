@@ -59,10 +59,10 @@ jobs:
       - name: Clean data
         run: Rscript 'clean_15m_weather.R'
       
-      # - name: Commit files
-      #   run: |
-      #     git config --local user.name actions-user
-      #     git config --local user.email "actions@github.com"
-      #     git add .
-      #     git commit -am "GH ACTION scraped and cleaned 15min weather on $(date)"
-      #     git push origin rm-repeats
+      - name: Commit files
+        run: |
+          git config --local user.name actions-user
+          git config --local user.email "actions@github.com"
+          git add .
+          git commit -am "GH ACTION scraped and cleaned 15min weather on $(date)"
+          git push origin rm-repeats
