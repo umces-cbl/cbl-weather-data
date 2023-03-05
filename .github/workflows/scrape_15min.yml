@@ -4,7 +4,7 @@ name: cbl_weather_scraping
 on:
   workflow_dispatch:
   schedule:
-    - cron:  '15 * * * *'
+    - cron:  '5,20,35,50 * * * *'
 
 
 jobs: 
