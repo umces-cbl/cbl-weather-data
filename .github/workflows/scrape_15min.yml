@@ -1,0 +1,41 @@
+name: cbl_weather_scraping
+
+# https://crontab.guru/
+on:
+  schedule:
+    - cron:  '15 * * * *'
+
+
+jobs: 
+  scrape_it:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      
+    steps:
+    - name: Check out GH repository
+      uses: actions/checkout@v3
+      
+    - name: Set up R
+      uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+
+    - name: Install packages
+      uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          packages: |
+            any::rvest
+        
+    - name: Scrape with R script
+      run: Rscript "scrape_15m_weather.R""
+      
+ # Add new files in data folder, commit along with other modified files, push
+    - name: Commit files
+      run: |
+        git config --local user.name actions-user
+        git config --local user.email "actions@github.com"
+        git add data/*
+        git commit -am "GH ACTION scraped 15min weather on $(date)"
+        git push origin main
