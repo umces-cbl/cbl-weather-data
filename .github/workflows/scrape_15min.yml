@@ -2,6 +2,7 @@ name: cbl_weather_scraping
 
 # https://crontab.guru/
 on:
+  workflow_dispatch:
   schedule:
     - cron:  '15 * * * *'
 
