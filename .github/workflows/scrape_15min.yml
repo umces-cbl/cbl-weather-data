@@ -32,11 +32,37 @@ jobs:
     - name: Scrape with R script
       run: Rscript "scrape_15m_weather.R"
       
- # Add new files in data folder, commit along with other modified files, push
-    - name: Commit files
-      run: |
-        git config --local user.name actions-user
-        git config --local user.email "actions@github.com"
-        git add .
-        git commit -am "GH ACTION scraped 15min weather on $(date)"
-        git push origin main
+# https://docs.github.com/en/actions/using-workflows/storing-workflow-data-as-artifacts
+    - name: Store data as artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: weather-data
+        path: cbl_weather_15min.csv
+        retention-days: 1
+        
+# new job
+  remove_repeats:
+    needs: scrape_it
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v3
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+          
+      - name: Download weather data
+        uses: actions/download-artifact@v3
+        with:
+          name: weather-data
+      
+      - name: Clean data
+        run: Rscript 'clean_15m_weather.R'
+      
+      # - name: Commit files
+      #   run: |
+      #     git config --local user.name actions-user
+      #     git config --local user.email "actions@github.com"
+      #     git add .
+      #     git commit -am "GH ACTION scraped and cleaned 15min weather on $(date)"
+      #     git push origin rm-repeats
