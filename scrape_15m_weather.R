@@ -26,11 +26,13 @@ if(file.exists('cbl_weather_15min.csv')){
               file = 'cbl_weather_15min.csv',
               append = T,
               col.names = F,
-              row.names = F)
+              row.names = F,
+              sep = ',')
 }else{
   write.table(data_body,
               file = 'cbl_weather_15min.csv',
-              row.names = F)
+              row.names = F,
+              sep = ',')
 }
 
 
