@@ -30,7 +30,7 @@ jobs:
           any::rvest
         
     - name: Scrape with R script
-      run: Rscript "scrape_15m_weather.R""
+      run: Rscript "scrape_15m_weather.R"
       
  # Add new files in data folder, commit along with other modified files, push
     - name: Commit files
