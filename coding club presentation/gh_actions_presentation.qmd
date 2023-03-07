@@ -1,0 +1,279 @@
+---
+title: "GitHub Actions"
+format:
+  revealjs:
+    theme: dark
+    slide-number: true
+    embed-resources: true
+---
+
+## What is GitHub Actions?
+
+GitHub Actions is "a continuous integration and continuous delivery (CI/CD) platform that allows you to automate your build, test, and deployment pipeline."
+
+<https://docs.github.com/en/actions/learn-github-actions/understanding-github-actions>
+
+## What does this mean for me? {.smaller}
+
+You can automate the running of certain scripts, to do anything from
+
+- Building a website
+  - <https://github.com/quarto-dev/quarto-actions>
+  - <https://github.com/r-lib/actions/tree/v2/examples#build-pkgdown-site>
+- Testing your code on other operating systems
+  - <https://github.com/r-lib/actions/tree/v2/examples#standard-ci-workflow>
+- Scheduling a script to run
+  - What we're doing today
+  
+# Nuts and bolts
+
+## Servers ("runners")
+
+:::: {.columns}
+::: {.column}
+Windows and Linux virtual machines:
+
+- 2-core CPU (x86_64)
+- 7 GB of RAM
+- 14 GB of SSD space
+:::
+::: {.column}
+macOS virtual machines:
+
+- 3-core CPU (x86_64)
+- 14 GB of RAM
+- 14 GB of SSD space
+:::
+::::
+
+## Servers ("runners")
+
+- Much smaller/slower than SALMO/LOTA/ARION, **BUT**
+
+::: {.incremental}
+- Need to be on VPN
+- CBL workstations are not web servers
+- SALMO and LOTA are shared
+- ARION has individual credentials, so hard to collaborate
+:::
+
+# Parts of a GH Action
+
+## Parts of a GH Action
+
+- [**Workflow**](https://docs.github.com/en/actions/using-workflows/about-workflows)
+  - May contain multiple **jobs**
+  - Contains information of what **events** trigger the workflow to start
+- [**Jobs**](https://docs.github.com/en/actions/using-jobs/using-jobs-in-a-workflow)
+  - May contain multiple **steps**
+  - Most steps involve downloading/installing the necessary programs (R, R packages, etc.)
+- **Steps**
+  - The meat of the process
+
+## Environments
+
+- Environments are:
+  - shared between steps
+  - NOT shared between jobs
+  - NOT shared between workflows.
+- Environment in a step takes precedence over that of the bigger job, which takes precedence over that of the workflow.
+
+
+# Coding of a GH Action
+## Location
+
+- Stored in a special ".github" directory in your repository
+- And then within a "workflows" directory
+- Saved in a `yaml` (or `yml`) file 
+
+## YAML
+
+- GH Actions are coded in [YAML](https://en.wikipedia.org/wiki/YAML)
+  - "Yet Another Markup Language"
+  - "YAML Ain't Markup Language"
+- Spacing is **VERY** important in YAML
+- Unfortunately, I haven't really figured out the rules, but GitHub will yell at you if something is incorrect
+- <https://learnxinyminutes.com/docs/yaml/>
+
+## Workflow info
+
+- Name of the workflow (useful to keep track of things)
+```
+name: my_workflow
+```
+- Event triggers ([there are a quite a few](https://docs.github.com/en/actions/using-workflows/events-that-trigger-workflows); these are my favorites)
+```
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, my_feature_branch]
+  schedule:
+    - cron: "30  9,17 * * 1-5" 
+```
+
+## Workflow: Event triggers
+
+:::: {.columns}
+::: {.column}
+- `workflow_dispatch`
+  - adds a button that lets you run the workflow with a click
+- `push`
+  - runs the workflow whenever you push commits to the named branch
+:::
+::: {.column}
+- `schedule`
+  - run at the designated "MIN HR DofMON MON DofWK" (UTC)
+  - uses the [cron scheduler](https://en.wikipedia.org/wiki/Cron)
+  - <https://crontab.guru/>
+  - "30 9,17 * * 1-5"
+    - Run at 9:30 & 17:30 every day of the month, every month, M-F
+:::
+::::
+
+
+## Jobs
+
+- Name of the job
+- OS to run the job 
+  - `runs-on`; usually `ubuntu-latest`
+- Environmental variables
+  - usually always a GH token
+  - other secrets
+
+```
+jobs:
+  my-super-neat-job:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN}}
+      MY_SECRET_PASSWORD: ${{ secrets.MIKES_PW }}
+```
+
+## Steps: Setting it up
+
+- Nested under jobs
+- Can run your own program (`run`), or call others that have been developed (`uses`)
+  - <https://github.com/r-lib/actions/tree/v2>
+  - <https://github.com/marketplace?type=actions>
+- First few are usually:
+  1) Check out repository
+  2) Install R
+  3) Install packages
+
+## Steps: Setting it up
+
+```
+steps:
+  - name: Check out repository
+    uses: actions/checkout@v3
+    
+  - name: Set up R
+    uses: r-lib/actions/setup-r@v2
+    with:
+      use-public-rspm: true
+      
+  - name: Install packages
+    uses: r-lib/actions/setup-r-dependencies@v2
+    with:
+      packages: |
+        any::dplyr
+        any::lubridate
+```
+::: aside
+The vertical bar is a special character in YAML, allowing for a multi-line string
+:::
+
+## Steps: Getting it done
+
+The next few are usually where all of the fun stuff happens
+
+```
+  - name: My first R script
+    run: Rscript "do_the_thing.R"
+    
+  - name: My next R commands
+    run: |
+      my_addition <- 2 + 2
+    shell: Rscript {0}
+    
+  - name: Show my variable
+    run: my_addition
+    shell: Rscript {0}
+```
+
+::: aside
+You can source an R script right in the `run` line, or have multiple separate lines and follow it up with calling R in the `shell` command
+:::
+
+## Steps: Saving the result
+We usually want to do something with the result. If we want to save things, we need to commit it to the repository.
+
+```
+  - name: Commit files
+    run: |
+      git config --local user.name actions-user
+      git config --local user.email "actions@github.com"
+      git add .
+      git commit -am "GH ACTION did something on $(date)"
+      git push origin main
+```
+
+::: aside
+This adds all files that were created (`git add .`) to the main branch (`git push origin main`)
+:::
+
+# Other bits and pieces
+## Permissions
+- Likely need to allow write permissions
+  - Settings > Actions > General > Worflow permissions > Read and write permissions
+- Could also possibly do this in the Workflow, but I haven't checked
+- <https://docs.github.com/en/actions/using-jobs/assigning-permissions-to-jobs>
+
+## Permissions: allow writing
+Workflow level
+```
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+```
+
+Job level
+
+```
+job:
+  my_awesome_job:
+    permissions:
+      contents:
+        write
+```
+
+## Artifacts
+
+- Allow sharing of data between jobs/workflows
+- Need to be [uploaded](https://docs.github.com/en/actions/using-workflows/storing-workflow-data-as-artifacts#uploading-build-and-test-artifacts)/[downloaded](https://docs.github.com/en/actions/using-workflows/storing-workflow-data-as-artifacts#downloading-or-deleting-artifacts)
+- If you want to [keep things free](https://docs.github.com/en/billing/managing-billing-for-github-actions/about-billing-for-github-actions):
+  - Last 90 days, at most
+  - Are 500 MB, at most
+
+## Secrets
+
+- Information you'd like to use in your script, but don't want others to see
+  - Usernames/passwords needed to access certain information
+- [Secrets are encrypted](https://docs.github.com/en/actions/security-guides/encrypted-secrets?tool=webui)
+- Can be accessed as an environmental variable
+
+## Secrets (in R)
+
+```
+env:
+  SUPERSECRET: ${{ secrets.my_saved_secret_on_GH }}
+```
+
+```{r}
+#| eval: false
+
+the_secret <- Sys.getenv('SUPERSECRET')
+```
+
