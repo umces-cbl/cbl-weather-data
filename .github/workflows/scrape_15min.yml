@@ -1,10 +1,10 @@
 name: cbl_weather_scraping
 
 # https://crontab.guru/
-on:
-  workflow_dispatch:
-  schedule:
-    - cron:  '5,20,35,50 * * * *'
+#on:
+#  workflow_dispatch:
+#  schedule:
+#    - cron:  '5,20,35,50 * * * *'
 
 
 jobs: 
